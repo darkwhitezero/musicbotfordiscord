@@ -1,5 +1,15 @@
-node_modules/
 .env
+.env.*
+cookies.txt
+node_modules/
+*.log
+
+# cache / downloads
 cache/
-.DS_Store
-npm-debug.log*
+*.webm
+*.mp3
+*.m4a
+*.opus
+*.ogg
+*.wav
+*.part
