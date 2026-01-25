@@ -26,7 +26,7 @@ for (const file of commandFiles) {
 const queueManager = new QueueManager();
 const CACHE_DIR = path.join(process.cwd(), 'cache');
 
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`Logged in as ${client.user.tag}`);
 
   setInterval(async () => {

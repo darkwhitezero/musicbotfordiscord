@@ -22,6 +22,7 @@ npm install
 DISCORD_TOKEN=your_bot_token
 DISCORD_CLIENT_ID=your_app_client_id
 DISCORD_GUILD_ID=your_test_guild_id
+YTDLP_COOKIES=/path/to/cookies.txt
 ```
 
 ## Регистрация слэш-команд
@@ -83,6 +84,7 @@ nano .env
 DISCORD_TOKEN=your_bot_token
 DISCORD_CLIENT_ID=your_app_client_id
 DISCORD_GUILD_ID=your_test_guild_id
+YTDLP_COOKIES=/path/to/cookies.txt
 ```
 
 7. **Зарегистрируйте слэш-команды**
@@ -130,3 +132,4 @@ journalctl -u discord-music-bot -f
 ## Заметки
 - `yt-dlp` используется для скачивания аудио. Убедитесь, что бинарник доступен в PATH.
 - Кэш хранится в папке `cache/` и автоматически очищается раз в час.
+- Если YouTube требует подтверждение «I’m not a bot», экспортируйте cookies из браузера и укажите путь в `YTDLP_COOKIES`.

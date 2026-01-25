@@ -37,6 +37,10 @@ function runYtDlp(args) {
 
 async function fetchMetadata(query) {
   const args = ['-J', '--no-playlist', query.startsWith('http') ? query : `ytsearch1:${query}`];
+  const cookiesPath = process.env.YTDLP_COOKIES;
+  if (cookiesPath) {
+    args.unshift('--cookies', cookiesPath);
+  }
   const { stdout } = await runYtDlp(args);
   const metadata = JSON.parse(stdout);
   if (metadata.entries && metadata.entries.length > 0) {
@@ -50,6 +54,10 @@ async function downloadAudio({ url, cacheDir }) {
   const fileId = randomUUID();
   const outputTemplate = path.join(cacheDir, `${fileId}.%(ext)s`);
   const args = ['-f', 'bestaudio', '-o', outputTemplate, url];
+  const cookiesPath = process.env.YTDLP_COOKIES;
+  if (cookiesPath) {
+    args.unshift('--cookies', cookiesPath);
+  }
   await runYtDlp(args);
 
   const files = await fs.readdir(cacheDir);
