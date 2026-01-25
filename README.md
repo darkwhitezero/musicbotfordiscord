@@ -43,33 +43,60 @@ npm start
 
 Если планируется несколько серверов/параллельных очередей, берите 2 vCPU и 2–4 ГБ RAM.
 
-### Подготовка сервера
-1. Установите Node.js 18+ и `yt-dlp`:
+### Полный план запуска на VDS/VPS
+1. **Создайте VDS/VPS**
+   - Выберите тариф с минимальными параметрами выше.
+   - Установите ОС (рекомендуется Ubuntu 22.04 LTS).
+   - Сохраните данные доступа (IP, пользователь, пароль/SSH ключ).
+
+2. **Подключитесь по SSH**
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs yt-dlp ffmpeg
+ssh user@your_vps_ip
 ```
 
-2. Склонируйте репозиторий и установите зависимости:
+3. **Обновите систему и установите зависимости**
+```bash
+sudo apt-get update && sudo apt-get upgrade -y
+sudo apt-get install -y git curl yt-dlp ffmpeg
+```
+
+4. **Установите Node.js 18**
+```bash
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node -v
+```
+
+5. **Клонируйте проект и установите зависимости**
 ```bash
 git clone <your_repo_url>
 cd musicbotfordiscord
 npm install
 ```
 
-3. Создайте `.env` и заполните токены:
+6. **Создайте файл конфигурации `.env`**
+```bash
+nano .env
+```
+Пример содержимого:
 ```bash
 DISCORD_TOKEN=your_bot_token
 DISCORD_CLIENT_ID=your_app_client_id
 DISCORD_GUILD_ID=your_test_guild_id
 ```
 
-4. Зарегистрируйте слэш-команды:
+7. **Зарегистрируйте слэш-команды**
 ```bash
 npm run deploy-commands
 ```
 
-### Запуск как сервис (systemd)
+8. **Проверьте локальный запуск**
+```bash
+npm start
+```
+Если бот запустился и отвечает в Discord — переходите к запуску как сервис.
+
+9. **Настройте автозапуск через systemd**
 Создайте unit-файл `/etc/systemd/system/discord-music-bot.service`:
 ```ini
 [Unit]
@@ -88,11 +115,16 @@ User=www-data
 WantedBy=multi-user.target
 ```
 
-Запустите сервис:
+10. **Запустите и включите сервис**
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now discord-music-bot
 sudo systemctl status discord-music-bot
+```
+
+11. **Проверьте логи при необходимости**
+```bash
+journalctl -u discord-music-bot -f
 ```
 
 ## Заметки
