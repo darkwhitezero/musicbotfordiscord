@@ -1,10 +1,13 @@
 # musicbotfordiscord
 
-Discord-бот с поддержкой слэш-команд, загрузкой аудио с YouTube и автоочисткой кэша.
+Discord-бот с поддержкой слэш-команд, загрузкой аудио с YouTube/Spotify и автоочисткой кэша.
 
 ## Возможности
-- Слэш-команды: `/play`, `/pause`, `/resume`, `/skip`, `/stop`, `/queue`, `/nowplaying`
+- Слэш-команды: `/play`, `/pause`, `/resume`, `/skip`, `/stop`, `/queue`, `/nowplaying`, `/join`, `/volume`, `/seek`
 - Поиск и скачивание треков с YouTube через `yt-dlp`
+- **Поддержка Spotify-ссылок** — автоконвертация в YouTube-запрос
+- Регулировка громкости и перемотка треков
+- **Автовыход из канала** — бот выходит через 30 сек, если остался один
 - Автоочистка кэша: удаление файлов старше 24 часов
 
 ---
@@ -32,7 +35,7 @@ Discord-бот с поддержкой слэш-команд, загрузкой
 npm install
 ```
 
-Создайте файл `.env`:
+Создайте файл `.env` (см. `.env.example`):
 ```env
 DISCORD_TOKEN=your_bot_token
 DISCORD_CLIENT_ID=your_app_client_id
@@ -41,12 +44,64 @@ DISCORD_GUILD_ID=your_test_guild_id
 # yt-dlp
 YTDLP_BIN=/usr/local/bin/yt-dlp
 YTDLP_COOKIES=/root/musicbotfordiscord/cookies.txt
+
+# Spotify (опционально)
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 ```
 
 Права на секреты:
 ```bash
 chmod 600 .env cookies.txt
 ```
+
+---
+
+## Команды
+
+| Команда | Описание |
+|---------|----------|
+| `/play <query>` | Проиграть трек (YouTube URL, Spotify URL или поиск) |
+| `/pause` | Поставить на паузу |
+| `/resume` | Продолжить воспроизведение |
+| `/skip` | Пропустить текущий трек |
+| `/stop` | Остановить и очистить очередь |
+| `/queue` | Показать очередь |
+| `/nowplaying` | Показать текущий трек |
+| `/join` | Подключить бота к вашему каналу |
+| `/volume <0-100>` | Установить громкость |
+| `/seek <seconds>` | Перемотать на указанную секунду |
+
+---
+
+## Spotify
+
+При использовании Spotify-ссылок (`https://open.spotify.com/track/...`):
+- Бот получает метаданные трека (исполнитель, название)
+- Ищет эквивалент на YouTube и воспроизводит его
+- Spotify не воспроизводится напрямую (DRM)
+
+### Настройка Spotify API (рекомендуется)
+
+1. Создайте приложение на [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Скопируйте Client ID и Client Secret
+3. Добавьте в `.env`:
+   ```env
+   SPOTIFY_CLIENT_ID=your_client_id
+   SPOTIFY_CLIENT_SECRET=your_client_secret
+   ```
+
+**Без API-ключей** бот использует oEmbed (работает, но без точной длительности трека).
+
+---
+
+## Автовыход из канала
+
+Бот автоматически выходит из голосового канала, если:
+- Все пользователи покинули канал (боты не считаются)
+- Прошло 30 секунд ожидания
+
+Это экономит ресурсы и не оставляет бота висеть в пустых каналах.
 
 ---
 
@@ -65,10 +120,10 @@ npm start
 ## Cookies для YouTube (важно)
 
 Если видите ошибки вида:
-- `Sign in to confirm you’re not a bot`
+- `Sign in to confirm you're not a bot`
 - `HTTP Error 403: Forbidden`
 
-экспортируйте cookies из браузера (расширение “Get cookies.txt” / любое другое) в Netscape формате и сохраните, например:
+экспортируйте cookies из браузера (расширение "Get cookies.txt" / любое другое) в Netscape формате и сохраните, например:
 - `/root/musicbotfordiscord/cookies.txt`
 
 Проверка вручную:
@@ -141,6 +196,8 @@ DISCORD_CLIENT_ID=your_app_client_id
 DISCORD_GUILD_ID=your_test_guild_id
 YTDLP_BIN=/usr/local/bin/yt-dlp
 YTDLP_COOKIES=/root/musicbotfordiscord/cookies.txt
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
 ```
 
 Положите cookies:
@@ -208,7 +265,7 @@ journalctl -u discord-music-bot -f
 
 - `yt-dlp` должен быть доступен в PATH. Для systemd мы добавляем `/usr/local/bin` в `PATH` в unit-файле.
 - Кэш хранится в папке `cache/` и автоматически очищается раз в час (удаляются файлы старше 24 часов).
-- Если YouTube начинает отдавать “SABR streaming / 403”, обычно помогает использовать не web-клиент (в коде рекомендуется/используется `player_client=tv,android`).
+- Если YouTube начинает отдавать "SABR streaming / 403", обычно помогает использовать не web-клиент (в коде рекомендуется/используется `player_client=tv,android`).
 
 ## Лицензия
 См. файл `LICENSE`.
