@@ -1,19 +1,22 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
 const path = require('node:path');
-const { fetchMetadata, downloadAudio } = require('../utils/youtube');
-const { isSpotifyUrl, getSpotifyTrackInfo, formatDuration } = require('../utils/spotify');
+const {
+  resolveSpotifyTrack,
+  downloadSpotifyPreview,
+  formatDuration
+} = require('../utils/spotify');
 
 const CACHE_DIR = path.join(process.cwd(), 'cache');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('play')
-    .setDescription('Найти и проиграть трек с YouTube или Spotify')
+    .setDescription('Найти и проиграть трек из Spotify')
     .addStringOption((option) =>
       option
         .setName('query')
-        .setDescription('Название трека, ссылка YouTube или Spotify')
+        .setDescription('Название трека или ссылка Spotify')
         .setRequired(true)
     ),
   async execute(interaction, { queueManager }) {
@@ -28,19 +31,12 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      let searchQuery = query;
-      let spotifyInfo = null;
+      const track = await resolveSpotifyTrack(query);
+      const filePath = await downloadSpotifyPreview({
+        previewUrl: track.previewUrl,
+        cacheDir: CACHE_DIR
+      });
 
-      // Handle Spotify URLs
-      if (isSpotifyUrl(query)) {
-        spotifyInfo = await getSpotifyTrackInfo(query);
-        searchQuery = spotifyInfo.searchQuery;
-      }
-
-      // Fetch YouTube metadata and download
-      const metadata = await fetchMetadata(searchQuery);
-      const url = metadata.webpage_url || metadata.url || searchQuery;
-      const filePath = await downloadAudio({ url, cacheDir: CACHE_DIR });
       const queue = queueManager.get(interaction.guildId);
 
       let connection = getVoiceConnection(interaction.guildId);
@@ -53,37 +49,30 @@ module.exports = {
         queue.setConnection(connection);
       }
 
-      // Use Spotify info if available, otherwise YouTube metadata
-      const trackTitle = spotifyInfo?.title || metadata.title || 'Без названия';
-      const trackArtist = spotifyInfo?.artist || metadata.uploader || metadata.channel || '';
-      const trackDuration = spotifyInfo?.duration || metadata.duration || 0;
-      const trackThumbnail = spotifyInfo?.thumbnail || metadata.thumbnail || null;
-
       queue.enqueue({
-        title: trackTitle,
-        artist: trackArtist,
-        duration: trackDuration,
-        thumbnail: trackThumbnail,
-        url,
+        title: track.title || 'Без названия',
+        artist: track.artist || '',
+        duration: track.duration || 0,
+        thumbnail: track.thumbnail || null,
+        url: track.url || null,
         filePath
       });
 
       const position = queue.items.length + (queue.current ? 0 : 1);
 
-      // Create embed
       const embed = new EmbedBuilder()
-        .setColor(0x1DB954) // Spotify green
+        .setColor(0x1DB954)
         .setTitle('🎵 Трек добавлен!')
-        .setDescription(`**${trackTitle}**`)
+        .setDescription(`**${track.title || 'Без названия'}**`)
         .setTimestamp();
 
-      if (trackArtist) {
-        embed.addFields({ name: 'Исполнитель', value: trackArtist, inline: true });
+      if (track.artist) {
+        embed.addFields({ name: 'Исполнитель', value: track.artist, inline: true });
       }
 
       embed.addFields({
         name: 'Длительность',
-        value: formatDuration(trackDuration),
+        value: formatDuration(track.duration),
         inline: true
       });
 
@@ -91,14 +80,20 @@ module.exports = {
         embed.addFields({ name: 'Позиция в очереди', value: `#${position}`, inline: true });
       }
 
-      if (trackThumbnail) {
-        embed.setThumbnail(trackThumbnail);
+      if (track.thumbnail) {
+        embed.setThumbnail(track.thumbnail);
+      }
+
+      if (track.url) {
+        embed.addFields({ name: 'Источник', value: `[Spotify](${track.url})`, inline: true });
       }
 
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error(error);
-      await interaction.editReply('Не удалось загрузить трек. Убедитесь, что yt-dlp установлен и ссылка корректна.');
+      await interaction.editReply(
+        'Не удалось загрузить трек из Spotify. Убедитесь, что настроены SPOTIFY_CLIENT_ID/SPOTIFY_CLIENT_SECRET и у трека есть preview.'
+      );
     }
   }
 };

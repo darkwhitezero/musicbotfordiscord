@@ -1,7 +1,7 @@
 {
   "name": "musicbotfordiscord",
   "version": "1.0.0",
-  "description": "Discord music bot with slash commands and YouTube download",
+  "description": "Discord music bot with slash commands and Spotify-based playback",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
